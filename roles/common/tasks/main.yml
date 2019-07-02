@@ -1,0 +1,118 @@
+---
+
+#--- General ---#
+
+- name: Configuring /etc/profile
+  lineinfile: dest=/etc/profile line={{ item }}
+  with_items:
+    - '#--- Custom vars and alias ---#'
+    - 'export HISTTIMEFORMAT="%d/%m/%Y - %H:%M:%S - "'
+    - 'export HISTSIZE="5000"'
+    - 'export HISTFILESIZE="5000"'
+    - 'alias ls="ls -lh --color"'
+    - 'alias grep="grep -i --color"'
+    - 'alias vi="vim"'
+    - 'alias rm="rm -i"'
+
+- name: Disabling SELINUX 1/2
+  replace:
+    dest: /etc/selinux/config
+    regexp: 'SELINUX=enforcing'
+    replace: 'SELINUX=disabled'
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+- name: Disabling SELINUX 2/2
+  shell: setenforce 0
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+#--- Update and package installation
+
+- name: Installing epel-release repo
+  yum: name=epel-release state=latest
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+- name: Updating OS - RedHat/CentOS
+  yum: name=* state=latest update_cache=yes
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+#- name: Installing packages - RedHat/CentOS
+#  yum: name:{{item}} state=latest
+#  with_items:
+#    - "{{ common_packages_redhat }}"
+#  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+- name: Installing packages - RedHat/CentOS
+  yum:
+    name: "{{ common_packages_redhat }}" 
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+#- name: Removing unecessary packages - RedHat/CentOS
+#  yum: name={{item}} state=absent
+#  with_items:
+#    - NetworkManager
+#    - NetworkManager-libnm
+#    - firewalld
+#    - postfix
+#  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+#- name: Installing unzip - RedHat/CentOS
+#  shell: sudo yum install unzip -y
+#  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+
+- name: Updating OS 1/2 - Debian
+  apt: update_cache=yes upgrade=yes
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Updating OS 2/2 - Debian
+  apt: upgrade=dist
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+#- name: Installing packages - Debian
+#  apt: name={{item}} state=latest update_cache=yes
+#  with_items:
+#    - "{{ common_packages_debian }}"
+#  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Installing packages - Debian
+  yum:
+    name: "{{ common_packages_debian }}"
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+#--- Managing users
+
+- name: creating user lunchandlearn
+  user:
+    name=lunchandlearn
+    comment="Lunch and Learn - Ansible"
+    shell="/bin/bash"
+    home="/home/lunchandlearn"
+    password="344db06e7ee931c79451d33eb9b2eb1a"
+
+#--- Timezone
+
+- name: Configuring timezone
+  file: src=/usr/share/zoneinfo/America/Sao_Paulo dest=/etc/localtime state=link force=yes owner=root group=root
+
+#--- SSH configurations
+
+- name: Configuring sshd_config
+  lineinfile:
+    dest=/etc/ssh/sshd_config
+    state=present
+    regexp={{ item.regexp }}
+    line={{ item.line }}
+  with_items:
+    - { regexp: '#Port 22', line: 'Port 22' }
+    - { regexp: '#Banner none', line: 'Banner /etc/ssh/banner_ssh' }
+    - { regexp: 'X11Forwarding yes', line: 'X11forwarding no' }
+
+- name: Enabling SSH version 2
+  lineinfile: dest=/etc/ssh/sshd_config line='Protocol 2'
+
+- name: Adding banner_ssh
+  copy: src=banner_ssh dest=/etc/ssh/banner_ssh force=yes owner=root group=root mode=0755
+
+- name: Adding motd
+  template: src=motd dest=/etc/motd force=yes owner=root group=root mode=0755
+  notify:
+    - Restarting SSH

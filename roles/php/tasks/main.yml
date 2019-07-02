@@ -1,0 +1,55 @@
+---
+
+# Gerenciamento de pacotes
+
+- name: Installing PHP 7.2 repo
+  yum:
+    name: ['https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm', 'https://mirror.webtatic.com/yum/el7/webtatic-release.rpm']
+    state: latest
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+#- name: Atualizacao do Sistema Operacional
+#  yum: name=* state=latest update_cache=yes
+#  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+- name: Installing PHP 7.2 packages
+  yum:
+    name: "{{ packages }}"
+    state: latest
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+# Configuracoes
+
+- name: Creating security copy of /etc/php.ini
+  command: cp /etc/php.ini /etc/php.ini_original
+  args:
+    warn: false
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+- name: Creating security copy of  /etc/php-fpm.d/www.conf
+  command: mv /etc/php-fpm.d/www.conf /etc/php-fpm.d/www.conf_original
+  args:
+    warn: false
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+- name: Configuring timezone on php.ini
+  lineinfile:
+    dest=/etc/php.ini
+    state=present
+    regexp=';date.timezone ='
+    line='date.timezone = America/Sao_Paulo'
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+- name: Copying www.conf to server
+  copy: src=www.conf dest=/etc/php-fpm.d/www.conf owner=root group=root
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+- name: Creating PHP-FPM directories
+  file: path={{item}} state=directory mode=755 owner=nginx group=nginx
+  with_items:
+    - /var/lib/php/session
+    - /var/lib/php/wsdlcache
+  notify: Restarting php-fpm
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+...

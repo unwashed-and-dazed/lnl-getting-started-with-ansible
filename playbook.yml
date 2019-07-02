@@ -1,0 +1,11 @@
+---
+
+- name: Playbook Lunch and Learn - Ansible
+  hosts: all
+  roles:
+    - common
+    - mysql
+    - nginx
+    - php
+    - wordpress
+...

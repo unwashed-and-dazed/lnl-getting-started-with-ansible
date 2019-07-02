@@ -1,0 +1,9 @@
+[servers_web]
+www	ansible_ssh_host=192.168.123.20 ansible_ssh_private_key_file=
+
+[servers_bd]
+mysql 	ansible_ssh_host=192.168.123.30 ansible_ssh_private_key_file=
+
+[servers:children]
+servers_web
+servers_bd

@@ -1,0 +1,8 @@
+---
+
+wordpress_database_name: wordpress
+wordpress_database_user: wordpress
+wordpress_database_user_password: wordpress
+wordpress_mysql_host: 192.168.123.30
+
+...

@@ -1,0 +1,28 @@
+---
+
+- name: Downloading wordpress source code
+  unarchive:
+    src: https://wordpress.org/wordpress-5.2.2.zip
+    dest: /var/www/html
+    owner: nginx
+    group: nginx
+    remote_src: yes
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+- name: CConfiguring wordpress key (salt)
+  local_action: command curl https://api.wordpress.org/secret-key/1.1/salt/
+  register: "wp_salt"
+  become: no
+  become_method: sudo
+  args:
+    warn: false
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+- name: Copying template wp-config.php to server
+  template: src=wp-config.php dest=/var/www/html/wordpress force=yes owner=nginx group=nginx
+  notify:
+    - Restarting php-fpm
+    - Restarting nginx
+  when: ansible_distribution == 'RedHat' or ansible_distribution == 'CentOS'
+
+...

@@ -1,0 +1,8 @@
+----------------------------------------------------
+		  Lunch and Learn - Ansible
+
+Host.: "{{ ansible_hostname }}"
+IP Address.: "{{ ansible_default_ipv4 }}"
+Distribution.: "{{ ansible_distribution }}"
+
+----------------------------------------------------
